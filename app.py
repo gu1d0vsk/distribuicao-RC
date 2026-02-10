@@ -6,7 +6,7 @@ import streamlit.components.v1 as components
 # --- Configuração da Página ---
 st.set_page_config(page_title="Calculadora de Orçamento", page_icon="💰", layout="centered")
 
-# --- CSS / Identidade Visual (Idêntico ao app original) ---
+# --- CSS / Identidade Visual ---
 page_bg_img = """
 <style>
 [data-testid="stApp"] {
@@ -19,7 +19,7 @@ page_bg_img = """
 }
 
 /* Força texto claro */
-.stMarkdown, .stText, p, h1, h2, h3, h4, h5, h6, label, span {
+.stMarkdown, .stText, p, h1, h2, h3, h4, h5, h6, label, span, div {
     color: #e0e0e0 !important;
 }
 
@@ -84,14 +84,16 @@ div[data-testid="stButton"] > button:hover {
     display: flex; 
     flex-direction: column; 
     justify-content: center; 
-    color: #31333f; 
+    color: #31333f !important; /* Força cor escura dentro do card claro */
     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
 }
 
 .metric-year { background-color: rgb(0, 80, 81); }
-.metric-year .value { color: #FFFFFF; font-size: 1.8rem; font-weight: 900; }
-.metric-year .label { color: rgba(255, 255, 255, 0.85); font-size: 1rem; margin-bottom: 0.25rem; }
-.metric-year .details { color: rgba(255, 255, 255, 0.6); font-size: 0.8rem; margin-top: 0.25rem; }
+
+/* Ajuste específico para textos dentro dos cards para garantir legibilidade */
+.metric-year .value { color: #FFFFFF !important; font-size: 1.8rem; font-weight: 900; }
+.metric-year .label { color: rgba(255, 255, 255, 0.85) !important; font-size: 1rem; margin-bottom: 0.25rem; }
+.metric-year .details { color: rgba(255, 255, 255, 0.7) !important; font-size: 0.8rem; margin-top: 0.25rem; }
 
 .custom-warning {
     border-radius: 1.5rem;
@@ -100,7 +102,7 @@ div[data-testid="stButton"] > button:hover {
     text-align: center;
     background-color: rgba(255, 170, 0, 0.1); 
     border: 1px solid rgba(255, 170, 0, 0.5); 
-    color: rgb(247, 185, 61);
+    color: rgb(247, 185, 61) !important;
 }
 
 /* Animação */
@@ -119,48 +121,35 @@ def calcular_distribuicao(inicio, fim):
     
     total_dias = (fim - inicio).days + 1
     
-    # Identificar os anos envolvidos
     ano_inicial = inicio.year
     ano_final = fim.year
     
     distribuicao_bruta = {}
     
-    # Calcula dias por ano
     for ano in range(ano_inicial, ano_final + 1):
-        # Define o início do período neste ano
         inicio_periodo = max(inicio, date(ano, 1, 1))
-        # Define o fim do período neste ano
         fim_periodo = min(fim, date(ano, 12, 31))
-        
         dias_no_ano = (fim_periodo - inicio_periodo).days + 1
         distribuicao_bruta[ano] = dias_no_ano
 
-    # Calcula proporção e arredonda
     resultado_final = {}
     soma_atual = 0
     maior_valor = -1
     ano_maior_valor = -1
 
-    # Primeira passada: Arredondamento simples para 2 casas
     for ano, dias in distribuicao_bruta.items():
         proporcao = round(dias / total_dias, 2)
         resultado_final[ano] = proporcao
         soma_atual += proporcao
         
-        # Rastreia qual ano tem a maior fatia para ajuste posterior se necessário
         if proporcao > maior_valor:
             maior_valor = proporcao
             ano_maior_valor = ano
             
-    # Ajuste fino para garantir que a soma seja exatamente 1.00
-    # Como float pode ter imprecisão, usamos round na diferença
     diferenca = round(1.00 - soma_atual, 2)
     
     if diferenca != 0:
-        # Aplica a diferença ao ano com maior valor (para diluir o impacto visual)
-        # ou ao último ano se preferir. Aqui usamos o maior valor.
         resultado_final[ano_maior_valor] += diferenca
-        # Garante precisão de float
         resultado_final[ano_maior_valor] = round(resultado_final[ano_maior_valor], 2)
 
     return resultado_final, None
@@ -173,11 +162,12 @@ st.markdown('<p class="sub-title">Calcule a proporção do contrato por ano fisc
 col1, col2 = st.columns(2)
 
 with col1:
-    dt_inicio = st.date_input("Início da Vigência", value=date.today())
+    # CORREÇÃO: Adicionado format="DD/MM/YYYY"
+    dt_inicio = st.date_input("Início da Vigência", value=date.today(), format="DD/MM/YYYY")
 
 with col2:
-    # Sugere 1 ano depois por padrão
-    dt_fim = st.date_input("Fim da Vigência", value=date.today() + datetime.timedelta(days=365))
+    # CORREÇÃO: Adicionado format="DD/MM/YYYY"
+    dt_fim = st.date_input("Fim da Vigência", value=date.today() + datetime.timedelta(days=365), format="DD/MM/YYYY")
 
 col_vazia_esq, col_btn, col_vazia_dir = st.columns([1, 2, 1])
 
@@ -196,6 +186,7 @@ if calcular:
         cards_html = ""
         for ano, valor in dados.items():
             percentual = int(valor * 100)
+            # Construção da string HTML pura
             cards_html += f"""
             <div class="metric-custom metric-year">
                 <div class="label">Ano {ano}</div>
@@ -204,7 +195,8 @@ if calcular:
             </div>
             """
         
-        st.markdown(f"""
+        # CORREÇÃO: Renderização explícita do HTML
+        final_html = f"""
         <div class="results-container">
             <div class="section-container">
                 <h3>Resultado da Distribuição</h3>
@@ -214,9 +206,10 @@ if calcular:
                 </div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """
+        st.markdown(final_html, unsafe_allow_html=True)
 
-# --- Scripts de Limpeza (Rodapé e Headers) ---
+# --- Scripts de Limpeza ---
 js_cleaner = """
 <script>
     const removeStreamlitElements = () => {
