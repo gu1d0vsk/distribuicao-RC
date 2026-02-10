@@ -2,6 +2,7 @@ import streamlit as st
 import datetime
 from datetime import date
 import streamlit.components.v1 as components
+import re
 
 # --- Configuração da Página ---
 st.set_page_config(page_title="Calculadora de Orçamento", page_icon="💰", layout="centered")
@@ -41,16 +42,34 @@ header {visibility: hidden;}
 .main-title { font-size: 2.2rem !important; font-weight: bold; text-align: center; }
 .sub-title { color: gray; text-align: center; font-size: 1.25rem !important; margin-bottom: 2rem; }
 
-/* Inputs */
-div[data-testid="stDateInput"] input, div[data-testid="stNumberInput"] input { 
-    border-radius: 1.5rem !important; 
+/* --- ESTILIZAÇÃO DOS INPUTS (TEXTO E DATA) --- */
+
+/* Input Wrapper (A caixa em si) */
+div[data-testid="stDateInput"] input, 
+div[data-testid="stTextInput"] input { 
+    border-radius: 2rem !important; /* Bordas bem arredondadas */
     text-align: center; 
-    font-weight: 600; 
+    font-weight: 600;
+    background-color: rgba(12, 19, 14, 0.7) !important; /* Fundo escuro com opacidade 0.7 */
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    height: 3rem; /* Altura um pouco maior para estética */
 }
-.main div[data-testid="stDateInput"] > label, .main div[data-testid="stNumberInput"] > label { 
+
+/* Hover e Focus */
+div[data-testid="stDateInput"] input:focus, 
+div[data-testid="stTextInput"] input:focus {
+    border-color: rgb(221, 79, 5) !important;
+    box-shadow: 0 0 10px rgba(221, 79, 5, 0.2);
+}
+
+/* Labels Centralizadas */
+.main div[data-testid="stDateInput"] > label, 
+.main div[data-testid="stTextInput"] > label { 
     text-align: center !important; 
     width: 100%; 
-    display: block; 
+    display: block;
+    margin-bottom: 5px;
 }
 
 /* Botões com efeito NEON */
@@ -61,6 +80,8 @@ div[data-testid="stButton"] > button {
     border-color: transparent;
     transition: all 0.3s ease; 
     font-weight: bold;
+    height: 3rem;
+    font-size: 1.1rem !important;
 }
 div[data-testid="stButton"] > button:hover {
     box-shadow: 0 0 12px rgba(221, 79, 5, 0.8), 0 0 20px rgba(221, 79, 5, 0.4); 
@@ -117,6 +138,19 @@ st.markdown(page_bg_img, unsafe_allow_html=True)
 def formatar_moeda(valor):
     return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
+def parse_valor_brasileiro(valor_str):
+    """Converte string '10.000,00' para float 10000.00"""
+    try:
+        # Remove espaços
+        limpo = valor_str.strip()
+        # Remove pontos de milhar
+        limpo = limpo.replace(".", "")
+        # Troca vírgula decimal por ponto
+        limpo = limpo.replace(",", ".")
+        return float(limpo)
+    except:
+        return None
+
 def calcular_distribuicao_financeira(inicio, fim, valor_total):
     if inicio > fim:
         return None, None, "A data de início deve ser anterior ou igual à data de fim."
@@ -146,7 +180,6 @@ def calcular_distribuicao_financeira(inicio, fim, valor_total):
         proporcoes_finais[ano] = prop
         soma_proporcoes += prop
         
-        # Rastreia o ano com mais dias para receber o ajuste de arredondamento da proporção
         if dias > maior_dias:
             maior_dias = dias
             ano_maior_dias = ano
@@ -157,7 +190,7 @@ def calcular_distribuicao_financeira(inicio, fim, valor_total):
         proporcoes_finais[ano_maior_dias] += diferenca_prop
         proporcoes_finais[ano_maior_dias] = round(proporcoes_finais[ano_maior_dias], 2)
 
-    # 3. Calcular VALOR MONETÁRIO baseado na proporção fixa
+    # 3. Calcular VALOR MONETÁRIO
     valores_finais = {}
     soma_valores = 0.0
     
@@ -166,10 +199,9 @@ def calcular_distribuicao_financeira(inicio, fim, valor_total):
         valores_finais[ano] = val
         soma_valores += val
         
-    # Ajuste de centavos (se a multiplicação das proporções gerar dízima em dinheiro)
+    # Ajuste de centavos
     diferenca_valor = round(valor_total - soma_valores, 2)
     if diferenca_valor != 0:
-        # Aplica a diferença de centavos no mesmo ano que tem a maior fatia
         valores_finais[ano_maior_dias] += diferenca_valor
         valores_finais[ano_maior_dias] = round(valores_finais[ano_maior_dias], 2)
 
@@ -180,8 +212,8 @@ def calcular_distribuicao_financeira(inicio, fim, valor_total):
 st.markdown('<p class="main-title">Distribuição Orçamentária</p>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Calcule os valores anuais pela proporção fixa</p>', unsafe_allow_html=True)
 
-# Input de Valor
-valor_input = st.number_input("Valor da Compra (R$)", min_value=0.0, value=10000.0, step=100.0, format="%.2f")
+# Input de Valor (Text Input para permitir formatação visual BR)
+valor_texto = st.text_input("Valor da Compra (R$)", value="10.000,00", help="Use ponto para milhar e vírgula para centavos.")
 
 col1, col2 = st.columns(2)
 
@@ -199,30 +231,48 @@ with col_btn:
 # --- Processamento ---
 
 if calcular:
-    valores, proporcoes, erro = calcular_distribuicao_financeira(dt_inicio, dt_fim, valor_input)
-    
-    if erro:
-        st.markdown(f'<div class="custom-warning">{erro}</div>', unsafe_allow_html=True)
+    # Validação do Input de Valor
+    valor_valido = True
+    valor_float = 0.0
+    msg_erro = ""
+
+    # Verifica formato visual (regex simples para formato BR ou numero puro)
+    # Permite: 10000 | 10000,00 | 10.000,00
+    if not re.match(r'^[\d\.]+(?:,\d{1,2})?$', valor_texto.strip()):
+         valor_valido = False
+         msg_erro = "Formato inválido. Use pontos para milhar e vírgula para decimais (ex: 10.000,00)"
     else:
-        cards_html = ""
-        for ano in valores.keys():
-            val = valores[ano]
-            prop = proporcoes[ano]
-            
-            valor_formatado = formatar_moeda(val)
-            # Exibe a proporção exata usada no cálculo
-            fator_str = f"{prop:.2f}"
-            
-            cards_html += f"""
+        valor_float = parse_valor_brasileiro(valor_texto)
+        if valor_float is None:
+            valor_valido = False
+            msg_erro = "Erro ao converter valor."
+
+    if not valor_valido:
+        st.markdown(f'<div class="custom-warning">{msg_erro}</div>', unsafe_allow_html=True)
+    else:
+        valores, proporcoes, erro_calc = calcular_distribuicao_financeira(dt_inicio, dt_fim, valor_float)
+        
+        if erro_calc:
+            st.markdown(f'<div class="custom-warning">{erro_calc}</div>', unsafe_allow_html=True)
+        else:
+            cards_html = ""
+            for ano in valores.keys():
+                val = valores[ano]
+                prop = proporcoes[ano]
+                
+                valor_formatado = formatar_moeda(val)
+                fator_str = f"{prop:.2f}"
+                
+                cards_html += f"""
 <div class="metric-custom metric-year">
     <div class="label">Ano {ano}</div>
     <div class="value">{valor_formatado}</div>
     <div class="details">Fator: {fator_str}</div>
 </div>"""
-        
-        valor_total_fmt = formatar_moeda(valor_input)
-        
-        final_html = f"""
+            
+            valor_total_fmt = formatar_moeda(valor_float)
+            
+            final_html = f"""
 <div class="results-container">
     <div class="section-container">
         <h3>Resultado da Distribuição</h3>
@@ -233,7 +283,7 @@ if calcular:
     </div>
 </div>
 """
-        st.markdown(final_html, unsafe_allow_html=True)
+            st.markdown(final_html, unsafe_allow_html=True)
 
 # --- Scripts de Limpeza ---
 js_cleaner = """
