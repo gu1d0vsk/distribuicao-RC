@@ -119,57 +119,68 @@ def formatar_moeda(valor):
 
 def calcular_distribuicao_financeira(inicio, fim, valor_total):
     if inicio > fim:
-        return None, "A data de início deve ser anterior ou igual à data de fim."
+        return None, None, "A data de início deve ser anterior ou igual à data de fim."
     
     total_dias = (fim - inicio).days + 1
     
     ano_inicial = inicio.year
     ano_final = fim.year
     
-    distribuicao_dias = {}
-    
     # 1. Calcular dias por ano
+    distribuicao_dias = {}
     for ano in range(ano_inicial, ano_final + 1):
         inicio_periodo = max(inicio, date(ano, 1, 1))
         fim_periodo = min(fim, date(ano, 12, 31))
         dias_no_ano = (fim_periodo - inicio_periodo).days + 1
         distribuicao_dias[ano] = dias_no_ano
 
-    # 2. Calcular valor financeiro proporcional
-    resultado_final = {}
-    soma_valores = 0.0
-    maior_valor = -1
-    ano_maior_valor = -1
+    # 2. Calcular PROPORÇÃO FIXA (2 casas decimais)
+    proporcoes_finais = {}
+    soma_proporcoes = 0.0
+    ano_maior_dias = -1
+    maior_dias = -1
 
     for ano, dias in distribuicao_dias.items():
-        # Calcula a proporção precisa
-        proporcao = dias / total_dias
-        # Calcula o valor monetário e arredonda para 2 casas
-        valor_ano = round(proporcao * valor_total, 2)
+        # Arredonda a proporção para 2 casas imediatamente
+        prop = round(dias / total_dias, 2)
+        proporcoes_finais[ano] = prop
+        soma_proporcoes += prop
         
-        resultado_final[ano] = valor_ano
-        soma_valores += valor_ano
-        
-        # Rastreia o maior valor para ajuste de centavos
-        if valor_ano > maior_valor:
-            maior_valor = valor_ano
-            ano_maior_valor = ano
+        # Rastreia o ano com mais dias para receber o ajuste de arredondamento da proporção
+        if dias > maior_dias:
+            maior_dias = dias
+            ano_maior_dias = ano
             
-    # 3. Ajuste fino de centavos (para a soma bater exatamente o valor total)
-    diferenca = round(valor_total - soma_valores, 2)
-    
-    if diferenca != 0:
-        resultado_final[ano_maior_valor] += diferenca
-        resultado_final[ano_maior_valor] = round(resultado_final[ano_maior_valor], 2)
+    # Ajuste para soma das proporções ser 1.00
+    diferenca_prop = round(1.00 - soma_proporcoes, 2)
+    if diferenca_prop != 0:
+        proporcoes_finais[ano_maior_dias] += diferenca_prop
+        proporcoes_finais[ano_maior_dias] = round(proporcoes_finais[ano_maior_dias], 2)
 
-    return resultado_final, None
+    # 3. Calcular VALOR MONETÁRIO baseado na proporção fixa
+    valores_finais = {}
+    soma_valores = 0.0
+    
+    for ano, prop in proporcoes_finais.items():
+        val = round(prop * valor_total, 2)
+        valores_finais[ano] = val
+        soma_valores += val
+        
+    # Ajuste de centavos (se a multiplicação das proporções gerar dízima em dinheiro)
+    diferenca_valor = round(valor_total - soma_valores, 2)
+    if diferenca_valor != 0:
+        # Aplica a diferença de centavos no mesmo ano que tem a maior fatia
+        valores_finais[ano_maior_dias] += diferenca_valor
+        valores_finais[ano_maior_dias] = round(valores_finais[ano_maior_dias], 2)
+
+    return valores_finais, proporcoes_finais, None
 
 # --- Interface ---
 
 st.markdown('<p class="main-title">Distribuição Orçamentária</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Calcule os valores anuais do contrato</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Calcule os valores anuais pela proporção fixa</p>', unsafe_allow_html=True)
 
-# Input de Valor com key única para evitar conflitos
+# Input de Valor
 valor_input = st.number_input("Valor da Compra (R$)", min_value=0.0, value=10000.0, step=100.0, format="%.2f")
 
 col1, col2 = st.columns(2)
@@ -188,27 +199,25 @@ with col_btn:
 # --- Processamento ---
 
 if calcular:
-    dados, erro = calcular_distribuicao_financeira(dt_inicio, dt_fim, valor_input)
+    valores, proporcoes, erro = calcular_distribuicao_financeira(dt_inicio, dt_fim, valor_input)
     
     if erro:
         st.markdown(f'<div class="custom-warning">{erro}</div>', unsafe_allow_html=True)
     else:
         cards_html = ""
-        for ano, valor in dados.items():
-            valor_formatado = formatar_moeda(valor)
+        for ano in valores.keys():
+            val = valores[ano]
+            prop = proporcoes[ano]
             
-            # Calcula a proporção baseada no valor final (já ajustado)
-            # Evita divisão por zero
-            fator = 0.0
-            if valor_input > 0:
-                fator = valor / valor_input
+            valor_formatado = formatar_moeda(val)
+            # Exibe a proporção exata usada no cálculo
+            fator_str = f"{prop:.2f}"
             
-            # HTML sem indentação
             cards_html += f"""
 <div class="metric-custom metric-year">
     <div class="label">Ano {ano}</div>
     <div class="value">{valor_formatado}</div>
-    <div class="details">{fator:.2f}</div>
+    <div class="details">Fator: {fator_str}</div>
 </div>"""
         
         valor_total_fmt = formatar_moeda(valor_input)
