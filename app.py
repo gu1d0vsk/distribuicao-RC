@@ -93,6 +93,7 @@ div[data-testid="stButton"] > button:hover {
 /* Ajuste específico para textos dentro dos cards */
 .metric-year .value { color: #FFFFFF !important; font-size: 1.6rem; font-weight: 900; }
 .metric-year .label { color: rgba(255, 255, 255, 0.85) !important; font-size: 1rem; margin-bottom: 0.25rem; }
+.metric-year .details { color: rgba(255, 255, 255, 0.7) !important; font-size: 0.9rem; margin-top: 0.25rem; font-weight: 500; }
 
 .custom-warning {
     border-radius: 1.5rem;
@@ -168,7 +169,7 @@ def calcular_distribuicao_financeira(inicio, fim, valor_total):
 st.markdown('<p class="main-title">Distribuição Orçamentária</p>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Calcule os valores anuais do contrato</p>', unsafe_allow_html=True)
 
-# Input de Valor
+# Input de Valor com key única para evitar conflitos
 valor_input = st.number_input("Valor da Compra (R$)", min_value=0.0, value=10000.0, step=100.0, format="%.2f")
 
 col1, col2 = st.columns(2)
@@ -195,11 +196,19 @@ if calcular:
         cards_html = ""
         for ano, valor in dados.items():
             valor_formatado = formatar_moeda(valor)
-            # HTML sem indentação para evitar bugs de renderização
+            
+            # Calcula a proporção baseada no valor final (já ajustado)
+            # Evita divisão por zero
+            fator = 0.0
+            if valor_input > 0:
+                fator = valor / valor_input
+            
+            # HTML sem indentação
             cards_html += f"""
 <div class="metric-custom metric-year">
     <div class="label">Ano {ano}</div>
     <div class="value">{valor_formatado}</div>
+    <div class="details">{fator:.2f}</div>
 </div>"""
         
         valor_total_fmt = formatar_moeda(valor_input)
