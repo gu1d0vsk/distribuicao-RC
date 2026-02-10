@@ -7,60 +7,70 @@ import re
 # --- Configuração da Página ---
 st.set_page_config(page_title="Calculadora de Orçamento", page_icon="💰", layout="centered")
 
-# --- CSS / Identidade Visual ---
+# --- CSS / Identidade Visual OTIMIZADA ---
 page_bg_img = """
 <style>
+/* Fundo Geral */
 [data-testid="stApp"] {
     background-image: linear-gradient(rgb(2, 45, 44) 0%, rgb(0, 21, 21) 100%);
     background-attachment: fixed;
 }
 
-[data-testid="stHeader"] {
-    background-color: rgba(0,0,0,0);
-}
-
-/* Força texto claro */
-.stMarkdown, .stText, p, h1, h2, h3, h4, h5, h6, label, span, div {
-    color: #e0e0e0 !important;
-}
-
-/* CSS "NUCLEAR" PARA LIMPAR A INTERFACE */
+/* Limpeza da Interface */
+[data-testid="stHeader"] { background-color: rgba(0,0,0,0); }
 footer {visibility: hidden;}
 #MainMenu {visibility: hidden;}
 header {visibility: hidden;}
 .stDeployButton {display:none;}
 [data-testid="stStatusWidget"] {display:none;}
 
+/* Tipografia */
+.stMarkdown, .stText, p, h1, h2, h3, h4, h5, h6, label, span, div {
+    color: #e0e0e0 !important;
+}
+
 /* Container Principal */
 .main .block-container { 
     max-width: 800px; 
     padding-bottom: 5rem;
-    transform: translateY(0);
-    transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .main-title { font-size: 2.2rem !important; font-weight: bold; text-align: center; }
 .sub-title { color: gray; text-align: center; font-size: 1.25rem !important; margin-bottom: 2rem; }
 
-/* --- ESTILIZAÇÃO DOS INPUTS (TEXTO E DATA) --- */
+/* --- CORREÇÃO DOS INPUTS (TEXTO E DATA) --- */
 
-/* Input Wrapper (A caixa em si) */
-div[data-testid="stDateInput"] input, 
-div[data-testid="stTextInput"] input { 
-    border-radius: 2rem !important; /* Bordas bem arredondadas */
-    text-align: center; 
-    font-weight: 600;
-    background-color: rgba(12, 19, 14, 0.7) !important; /* Fundo escuro com opacidade 0.7 */
-    color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    height: 3rem; /* Altura um pouco maior para estética */
+/* 1. Removemos o estilo padrão do container externo para não sobrar fundo quadrado */
+div[data-testid="stDateInput"] > div, 
+div[data-testid="stTextInput"] > div {
+    background-color: transparent !important;
 }
 
-/* Hover e Focus */
-div[data-testid="stDateInput"] input:focus, 
-div[data-testid="stTextInput"] input:focus {
-    border-color: rgb(221, 79, 5) !important;
-    box-shadow: 0 0 10px rgba(221, 79, 5, 0.2);
+/* 2. Estilizamos a "caixa" (wrapper) do input */
+div[data-baseweb="input"], div[data-baseweb="base-input"] {
+    background-color: rgba(12, 19, 14, 0.7) !important; /* Fundo escuro translúcido */
+    border-radius: 2rem !important; /* Borda bem arredondada */
+    border: none !important; /* REMOVIDA A BORDA FINA */
+    box-shadow: none !important; /* Remove sombras padrões */
+    padding: 5px 10px !important; /* Espaço interno para o texto não colar na borda */
+}
+
+/* 3. Estilizamos o texto dentro do input e garantimos altura */
+div[data-testid="stDateInput"] input, 
+div[data-testid="stTextInput"] input { 
+    background-color: transparent !important; /* O fundo vem do pai */
+    color: #ffffff !important;
+    text-align: center; 
+    font-weight: 600;
+    font-size: 1.1rem; /* Texto levemente maior */
+    min-height: 2.5rem !important; /* Altura mínima para não cortar */
+    padding-top: 0px !important; /* Ajuste fino vertical */
+    padding-bottom: 0px !important;
+}
+
+/* Efeito Hover na caixa inteira */
+div[data-baseweb="input"]:hover, div[data-baseweb="base-input"]:hover {
+    box-shadow: 0 0 10px rgba(221, 79, 5, 0.2) !important;
 }
 
 /* Labels Centralizadas */
@@ -69,8 +79,11 @@ div[data-testid="stTextInput"] input:focus {
     text-align: center !important; 
     width: 100%; 
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
 }
+
+/* Ícones de erro/ajuda (ocultar ou ajustar se necessário) */
+div[data-testid="InputInstructions"] { display: none; }
 
 /* Botões com efeito NEON */
 div[data-testid="stButton"] > button { 
@@ -82,6 +95,7 @@ div[data-testid="stButton"] > button {
     font-weight: bold;
     height: 3rem;
     font-size: 1.1rem !important;
+    margin-top: 10px;
 }
 div[data-testid="stButton"] > button:hover {
     box-shadow: 0 0 12px rgba(221, 79, 5, 0.8), 0 0 20px rgba(221, 79, 5, 0.4); 
@@ -111,7 +125,7 @@ div[data-testid="stButton"] > button:hover {
 
 .metric-year { background-color: rgb(0, 80, 81); }
 
-/* Ajuste específico para textos dentro dos cards */
+/* Texto dos cards */
 .metric-year .value { color: #FFFFFF !important; font-size: 1.6rem; font-weight: 900; }
 .metric-year .label { color: rgba(255, 255, 255, 0.85) !important; font-size: 1rem; margin-bottom: 0.25rem; }
 .metric-year .details { color: rgba(255, 255, 255, 0.7) !important; font-size: 0.9rem; margin-top: 0.25rem; font-weight: 500; }
@@ -139,13 +153,9 @@ def formatar_moeda(valor):
     return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 def parse_valor_brasileiro(valor_str):
-    """Converte string '10.000,00' para float 10000.00"""
     try:
-        # Remove espaços
         limpo = valor_str.strip()
-        # Remove pontos de milhar
         limpo = limpo.replace(".", "")
-        # Troca vírgula decimal por ponto
         limpo = limpo.replace(",", ".")
         return float(limpo)
     except:
@@ -160,7 +170,6 @@ def calcular_distribuicao_financeira(inicio, fim, valor_total):
     ano_inicial = inicio.year
     ano_final = fim.year
     
-    # 1. Calcular dias por ano
     distribuicao_dias = {}
     for ano in range(ano_inicial, ano_final + 1):
         inicio_periodo = max(inicio, date(ano, 1, 1))
@@ -168,14 +177,12 @@ def calcular_distribuicao_financeira(inicio, fim, valor_total):
         dias_no_ano = (fim_periodo - inicio_periodo).days + 1
         distribuicao_dias[ano] = dias_no_ano
 
-    # 2. Calcular PROPORÇÃO FIXA (2 casas decimais)
     proporcoes_finais = {}
     soma_proporcoes = 0.0
     ano_maior_dias = -1
     maior_dias = -1
 
     for ano, dias in distribuicao_dias.items():
-        # Arredonda a proporção para 2 casas imediatamente
         prop = round(dias / total_dias, 2)
         proporcoes_finais[ano] = prop
         soma_proporcoes += prop
@@ -184,13 +191,11 @@ def calcular_distribuicao_financeira(inicio, fim, valor_total):
             maior_dias = dias
             ano_maior_dias = ano
             
-    # Ajuste para soma das proporções ser 1.00
     diferenca_prop = round(1.00 - soma_proporcoes, 2)
     if diferenca_prop != 0:
         proporcoes_finais[ano_maior_dias] += diferenca_prop
         proporcoes_finais[ano_maior_dias] = round(proporcoes_finais[ano_maior_dias], 2)
 
-    # 3. Calcular VALOR MONETÁRIO
     valores_finais = {}
     soma_valores = 0.0
     
@@ -199,7 +204,6 @@ def calcular_distribuicao_financeira(inicio, fim, valor_total):
         valores_finais[ano] = val
         soma_valores += val
         
-    # Ajuste de centavos
     diferenca_valor = round(valor_total - soma_valores, 2)
     if diferenca_valor != 0:
         valores_finais[ano_maior_dias] += diferenca_valor
@@ -212,7 +216,7 @@ def calcular_distribuicao_financeira(inicio, fim, valor_total):
 st.markdown('<p class="main-title">Distribuição Orçamentária</p>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Calcule os valores anuais pela proporção fixa</p>', unsafe_allow_html=True)
 
-# Input de Valor (Text Input para permitir formatação visual BR)
+# Input de Valor
 valor_texto = st.text_input("Valor da Compra (R$)", value="10.000,00", help="Use ponto para milhar e vírgula para centavos.")
 
 col1, col2 = st.columns(2)
@@ -231,13 +235,10 @@ with col_btn:
 # --- Processamento ---
 
 if calcular:
-    # Validação do Input de Valor
     valor_valido = True
     valor_float = 0.0
     msg_erro = ""
 
-    # Verifica formato visual (regex simples para formato BR ou numero puro)
-    # Permite: 10000 | 10000,00 | 10.000,00
     if not re.match(r'^[\d\.]+(?:,\d{1,2})?$', valor_texto.strip()):
          valor_valido = False
          msg_erro = "Formato inválido. Use pontos para milhar e vírgula para decimais (ex: 10.000,00)"
