@@ -40,36 +40,41 @@ header {visibility: hidden;}
 
 /* --- CORREÇÃO DOS INPUTS (TEXTO E DATA) --- */
 
-/* 1. Removemos o estilo padrão do container externo para não sobrar fundo quadrado */
+/* 1. Removemos o fundo do container pai para evitar "cantos quadrados" */
 div[data-testid="stDateInput"] > div, 
 div[data-testid="stTextInput"] > div {
     background-color: transparent !important;
 }
 
-/* 2. Estilizamos a "caixa" (wrapper) do input */
+/* 2. Estilizamos a "caixa" (wrapper) do input - AQUI ESTÁ A CORREÇÃO DA ALTURA */
 div[data-baseweb="input"], div[data-baseweb="base-input"] {
-    background-color: rgba(12, 19, 14, 0.7) !important; /* Fundo escuro translúcido */
-    border-radius: 2rem !important; /* Borda bem arredondada */
-    border: none !important; /* REMOVIDA A BORDA FINA */
-    box-shadow: none !important; /* Remove sombras padrões */
-    padding: 5px 10px !important; /* Espaço interno para o texto não colar na borda */
+    background-color: rgba(12, 19, 14, 0.5) !important; /* Opacidade ajustada para 0.5 */
+    border-radius: 2rem !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0px 15px !important; 
+    height: 3.5rem !important;     /* Altura forçada para não ficar fino */
+    min-height: 3.5rem !important; /* Garantia de altura */
+    align-items: center !important; /* Centraliza o texto verticalmente */
 }
 
-/* 3. Estilizamos o texto dentro do input e garantimos altura */
+/* 3. Estilizamos o texto dentro do input */
 div[data-testid="stDateInput"] input, 
 div[data-testid="stTextInput"] input { 
-    background-color: transparent !important; /* O fundo vem do pai */
+    background-color: transparent !important;
     color: #ffffff !important;
     text-align: center; 
     font-weight: 600;
-    font-size: 1.1rem; /* Texto levemente maior */
-    min-height: 2.5rem !important; /* Altura mínima para não cortar */
-    padding-top: 0px !important; /* Ajuste fino vertical */
-    padding-bottom: 0px !important;
+    font-size: 1.2rem; 
+    height: 100% !important; /* Ocupa toda a altura da caixa */
+    min-height: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
 /* Efeito Hover na caixa inteira */
 div[data-baseweb="input"]:hover, div[data-baseweb="base-input"]:hover {
+    background-color: rgba(12, 19, 14, 0.7) !important; /* Escurece um pouco no hover */
     box-shadow: 0 0 10px rgba(221, 79, 5, 0.2) !important;
 }
 
@@ -80,9 +85,10 @@ div[data-baseweb="input"]:hover, div[data-baseweb="base-input"]:hover {
     width: 100%; 
     display: block;
     margin-bottom: 8px;
+    font-size: 0.95rem;
 }
 
-/* Ícones de erro/ajuda (ocultar ou ajustar se necessário) */
+/* Ícones de erro/ajuda (ocultar) */
 div[data-testid="InputInstructions"] { display: none; }
 
 /* Botões com efeito NEON */
@@ -93,7 +99,7 @@ div[data-testid="stButton"] > button {
     border-color: transparent;
     transition: all 0.3s ease; 
     font-weight: bold;
-    height: 3rem;
+    height: 3.5rem; /* Mesma altura dos inputs */
     font-size: 1.1rem !important;
     margin-top: 10px;
 }
