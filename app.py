@@ -90,7 +90,7 @@ div[data-testid="stButton"] > button:hover {
 
 .metric-year { background-color: rgb(0, 80, 81); }
 
-/* Ajuste específico para textos dentro dos cards para garantir legibilidade */
+/* Ajuste específico para textos dentro dos cards */
 .metric-year .value { color: #FFFFFF !important; font-size: 1.8rem; font-weight: 900; }
 .metric-year .label { color: rgba(255, 255, 255, 0.85) !important; font-size: 1rem; margin-bottom: 0.25rem; }
 .metric-year .details { color: rgba(255, 255, 255, 0.7) !important; font-size: 0.8rem; margin-top: 0.25rem; }
@@ -108,7 +108,6 @@ div[data-testid="stButton"] > button:hover {
 /* Animação */
 .results-container { animation: fadeIn 0.5s ease-out forwards; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
 </style>
 """
 st.markdown(page_bg_img, unsafe_allow_html=True)
@@ -162,11 +161,9 @@ st.markdown('<p class="sub-title">Calcule a proporção do contrato por ano fisc
 col1, col2 = st.columns(2)
 
 with col1:
-    # CORREÇÃO: Adicionado format="DD/MM/YYYY"
     dt_inicio = st.date_input("Início da Vigência", value=date.today(), format="DD/MM/YYYY")
 
 with col2:
-    # CORREÇÃO: Adicionado format="DD/MM/YYYY"
     dt_fim = st.date_input("Fim da Vigência", value=date.today() + datetime.timedelta(days=365), format="DD/MM/YYYY")
 
 col_vazia_esq, col_btn, col_vazia_dir = st.columns([1, 2, 1])
@@ -180,33 +177,32 @@ if calcular:
     dados, erro = calcular_distribuicao(dt_inicio, dt_fim)
     
     if erro:
+        # Removido indentação para evitar bloco de código
         st.markdown(f'<div class="custom-warning">{erro}</div>', unsafe_allow_html=True)
     else:
-        # Montar HTML dos cards
         cards_html = ""
         for ano, valor in dados.items():
             percentual = int(valor * 100)
-            # Construção da string HTML pura
+            # A construção da string HTML abaixo está colada à esquerda para evitar indentação indesejada
             cards_html += f"""
-            <div class="metric-custom metric-year">
-                <div class="label">Ano {ano}</div>
-                <div class="value">{valor:.2f}</div>
-                <div class="details">{percentual}% do orçamento</div>
-            </div>
-            """
+<div class="metric-custom metric-year">
+    <div class="label">Ano {ano}</div>
+    <div class="value">{valor:.2f}</div>
+    <div class="details">{percentual}% do orçamento</div>
+</div>"""
         
-        # CORREÇÃO: Renderização explícita do HTML
+        # O HTML final também está sem indentação na primeira linha
         final_html = f"""
-        <div class="results-container">
-            <div class="section-container">
-                <h3>Resultado da Distribuição</h3>
-                <p style="font-size: 0.9rem; opacity: 0.8;">Soma total: 1.00</p>
-                <div class="results-grid">
-                    {cards_html}
-                </div>
-            </div>
+<div class="results-container">
+    <div class="section-container">
+        <h3>Resultado da Distribuição</h3>
+        <p style="font-size: 0.9rem; opacity: 0.8;">Soma total: 1.00</p>
+        <div class="results-grid">
+            {cards_html}
         </div>
-        """
+    </div>
+</div>
+"""
         st.markdown(final_html, unsafe_allow_html=True)
 
 # --- Scripts de Limpeza ---
