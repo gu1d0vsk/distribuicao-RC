@@ -42,12 +42,12 @@ header {visibility: hidden;}
 .sub-title { color: gray; text-align: center; font-size: 1.25rem !important; margin-bottom: 2rem; }
 
 /* Inputs */
-div[data-testid="stDateInput"] input { 
+div[data-testid="stDateInput"] input, div[data-testid="stNumberInput"] input { 
     border-radius: 1.5rem !important; 
     text-align: center; 
     font-weight: 600; 
 }
-.main div[data-testid="stDateInput"] > label { 
+.main div[data-testid="stDateInput"] > label, .main div[data-testid="stNumberInput"] > label { 
     text-align: center !important; 
     width: 100%; 
     display: block; 
@@ -71,7 +71,7 @@ div[data-testid="stButton"] > button:hover {
 .section-container { text-align: center; margin-top: 1.5rem; }
 .results-grid { 
     display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
     gap: 1rem; 
     margin-top: 1rem;
 }
@@ -84,16 +84,15 @@ div[data-testid="stButton"] > button:hover {
     display: flex; 
     flex-direction: column; 
     justify-content: center; 
-    color: #31333f !important; /* Força cor escura dentro do card claro */
+    color: #31333f !important; 
     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
 }
 
 .metric-year { background-color: rgb(0, 80, 81); }
 
 /* Ajuste específico para textos dentro dos cards */
-.metric-year .value { color: #FFFFFF !important; font-size: 1.8rem; font-weight: 900; }
+.metric-year .value { color: #FFFFFF !important; font-size: 1.6rem; font-weight: 900; }
 .metric-year .label { color: rgba(255, 255, 255, 0.85) !important; font-size: 1rem; margin-bottom: 0.25rem; }
-.metric-year .details { color: rgba(255, 255, 255, 0.7) !important; font-size: 0.8rem; margin-top: 0.25rem; }
 
 .custom-warning {
     border-radius: 1.5rem;
@@ -114,7 +113,10 @@ st.markdown(page_bg_img, unsafe_allow_html=True)
 
 # --- Funções de Lógica ---
 
-def calcular_distribuicao(inicio, fim):
+def formatar_moeda(valor):
+    return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+def calcular_distribuicao_financeira(inicio, fim, valor_total):
     if inicio > fim:
         return None, "A data de início deve ser anterior ou igual à data de fim."
     
@@ -123,29 +125,37 @@ def calcular_distribuicao(inicio, fim):
     ano_inicial = inicio.year
     ano_final = fim.year
     
-    distribuicao_bruta = {}
+    distribuicao_dias = {}
     
+    # 1. Calcular dias por ano
     for ano in range(ano_inicial, ano_final + 1):
         inicio_periodo = max(inicio, date(ano, 1, 1))
         fim_periodo = min(fim, date(ano, 12, 31))
         dias_no_ano = (fim_periodo - inicio_periodo).days + 1
-        distribuicao_bruta[ano] = dias_no_ano
+        distribuicao_dias[ano] = dias_no_ano
 
+    # 2. Calcular valor financeiro proporcional
     resultado_final = {}
-    soma_atual = 0
+    soma_valores = 0.0
     maior_valor = -1
     ano_maior_valor = -1
 
-    for ano, dias in distribuicao_bruta.items():
-        proporcao = round(dias / total_dias, 2)
-        resultado_final[ano] = proporcao
-        soma_atual += proporcao
+    for ano, dias in distribuicao_dias.items():
+        # Calcula a proporção precisa
+        proporcao = dias / total_dias
+        # Calcula o valor monetário e arredonda para 2 casas
+        valor_ano = round(proporcao * valor_total, 2)
         
-        if proporcao > maior_valor:
-            maior_valor = proporcao
+        resultado_final[ano] = valor_ano
+        soma_valores += valor_ano
+        
+        # Rastreia o maior valor para ajuste de centavos
+        if valor_ano > maior_valor:
+            maior_valor = valor_ano
             ano_maior_valor = ano
             
-    diferenca = round(1.00 - soma_atual, 2)
+    # 3. Ajuste fino de centavos (para a soma bater exatamente o valor total)
+    diferenca = round(valor_total - soma_valores, 2)
     
     if diferenca != 0:
         resultado_final[ano_maior_valor] += diferenca
@@ -156,7 +166,10 @@ def calcular_distribuicao(inicio, fim):
 # --- Interface ---
 
 st.markdown('<p class="main-title">Distribuição Orçamentária</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Calcule a proporção do contrato por ano fiscal</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Calcule os valores anuais do contrato</p>', unsafe_allow_html=True)
+
+# Input de Valor
+valor_input = st.number_input("Valor da Compra (R$)", min_value=0.0, value=10000.0, step=100.0, format="%.2f")
 
 col1, col2 = st.columns(2)
 
@@ -169,34 +182,33 @@ with col2:
 col_vazia_esq, col_btn, col_vazia_dir = st.columns([1, 2, 1])
 
 with col_btn:
-    calcular = st.button("Calcular Proporção", use_container_width=True)
+    calcular = st.button("Calcular Valores", use_container_width=True)
 
 # --- Processamento ---
 
 if calcular:
-    dados, erro = calcular_distribuicao(dt_inicio, dt_fim)
+    dados, erro = calcular_distribuicao_financeira(dt_inicio, dt_fim, valor_input)
     
     if erro:
-        # Removido indentação para evitar bloco de código
         st.markdown(f'<div class="custom-warning">{erro}</div>', unsafe_allow_html=True)
     else:
         cards_html = ""
         for ano, valor in dados.items():
-            percentual = int(valor * 100)
-            # A construção da string HTML abaixo está colada à esquerda para evitar indentação indesejada
+            valor_formatado = formatar_moeda(valor)
+            # HTML sem indentação para evitar bugs de renderização
             cards_html += f"""
 <div class="metric-custom metric-year">
     <div class="label">Ano {ano}</div>
-    <div class="value">{valor:.2f}</div>
-    <div class="details">{percentual}% do orçamento</div>
+    <div class="value">{valor_formatado}</div>
 </div>"""
         
-        # O HTML final também está sem indentação na primeira linha
+        valor_total_fmt = formatar_moeda(valor_input)
+        
         final_html = f"""
 <div class="results-container">
     <div class="section-container">
         <h3>Resultado da Distribuição</h3>
-        <p style="font-size: 0.9rem; opacity: 0.8;">Soma total: 1.00</p>
+        <p style="font-size: 0.9rem; opacity: 0.8;">Valor Total: {valor_total_fmt}</p>
         <div class="results-grid">
             {cards_html}
         </div>
