@@ -40,85 +40,112 @@ header {visibility: hidden;}
 .sub-title { color: gray; text-align: center; font-size: 1.25rem !important; margin-bottom: 2rem; }
 
 /* =========================================
-   CORREÇÃO DEFINITIVA DOS INPUTS E SELECT
+   SOLUÇÃO DEFINITIVA PARA OS INPUTS
    ========================================= */
 
-/* 1. Tira as bordas/sombras finas nativas dos containers externos */
-div[data-testid="stTextInput"] > div:first-child,
-div[data-testid="stDateInput"] > div:first-child,
-div[data-testid="stSelectbox"] > div:first-child,
-div[data-testid="stNumberInput"] > div:first-child {
+/* 1. Remove qualquer fundo de TODOS os wrappers externos do Streamlit */
+[data-testid="stTextInput"] > div,
+[data-testid="stDateInput"] > div,
+[data-testid="stSelectbox"] > div,
+[data-testid="stNumberInput"] > div {
     background-color: transparent !important;
     border: none !important;
     box-shadow: none !important;
 }
 
-/* 2. Aplica a NOSSA pílula apenas na camada base principal */
+/* 2. A "Pílula" (Fundo arredondado) aplicada apenas na camada principal */
 div[data-baseweb="base-input"],
 div[data-baseweb="select"] {
     background-color: rgba(12, 19, 14, 0.5) !important;
-    border-radius: 2rem !important;
+    border-radius: 50px !important; /* Arredondamento suave */
     border: none !important;
     box-shadow: none !important; 
-    padding: 0 !important; 
     height: 3.5rem !important;     
     min-height: 3.5rem !important; 
-    align-items: center !important; 
-    overflow: hidden !important; /* Corta qualquer coisa que tentar vazar (corrige a caixa cortada) */
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
 }
 
-/* 3. Limpa os wrappers intermediários que o Streamlit injeta */
-div[data-baseweb="input"],
-div[data-baseweb="select"] > div {
+/* Adicionando padding interno para Text e Date, mas tirando do Select para alinhar o centro */
+div[data-baseweb="base-input"] {
+    padding: 0 20px !important; 
+}
+div[data-baseweb="select"] {
+    padding: 0 !important; 
+    position: relative !important;
+}
+
+/* 3. Limpa o fundo do Select (camada interna do react-select) */
+div[data-baseweb="select"] > div:first-child {
     background-color: transparent !important;
     border: none !important;
     box-shadow: none !important;
+    height: 100% !important;
+    width: 100% !important;
+    border-radius: 50px !important;
 }
 
-/* 4. Estiliza o TEXTO para todos ficarem iguais e centralizados */
-input[type="text"], 
-input[type="number"], 
-div[data-baseweb="select"] [class*="SingleValue"] { 
+/* 4. Estiliza os textos digitados e datas */
+div[data-baseweb="base-input"] input { 
     background-color: transparent !important;
     color: #ffffff !important;
     text-align: center !important; 
     font-weight: 600 !important;
     font-size: 1.2rem !important; 
+    width: 100% !important;
     height: 100% !important;
-    padding: 0 15px !important;
+    padding: 0 !important;
     margin: 0 !important;
     border: none !important;
     box-shadow: none !important;
     outline: none !important;
 }
 
-/* Ajuste fino para forçar o Select a centralizar o texto ignorando a setinha lateral */
+/* 5. Centralização Absoluta do Texto do Selectbox (Ignora a setinha lateral) */
 div[data-baseweb="select"] [class*="ValueContainer"] {
-    padding: 0 !important;
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
+    height: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+}
+div[data-baseweb="select"] [class*="SingleValue"] {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 1.2rem !important;
+    margin: 0 !important;
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important; /* Puxa exatamente para o meio */
 }
 
-/* 5. ELIMINA O HOVER (Não vai piscar nem criar linha fina ao passar o mouse) */
+/* 6. Posição da Setinha do Selectbox */
+div[data-baseweb="select"] [class*="IndicatorsContainer"] {
+    position: absolute !important;
+    right: 15px !important;
+    height: 100% !important;
+    background: transparent !important;
+}
+div[data-baseweb="select"] svg {
+    fill: #dd4f05 !important; 
+}
+
+/* 7. Elimina o efeito feio do Hover (mouse em cima) */
 div[data-baseweb="base-input"]:hover, 
 div[data-baseweb="select"]:hover,
-div[data-baseweb="input"]:hover,
 div[data-baseweb="select"] > div:hover {
     background-color: rgba(12, 19, 14, 0.5) !important;
-    border: none !important;
     box-shadow: none !important;
+    border: none !important;
 }
 
-/* 6. Efeito de Foco (quando você clica no input para digitar, aplica um glow laranja invés da borda feia do streamlit) */
+/* 8. Brilho laranja ao clicar (Focus) */
 div[data-baseweb="base-input"]:focus-within, 
 div[data-baseweb="select"]:focus-within {
     box-shadow: 0 0 0 2px rgba(221, 79, 5, 0.6) !important; 
-}
-
-/* Deixa a setinha do Select laranja para combinar com o botão */
-div[data-baseweb="select"] svg {
-    fill: #dd4f05 !important; 
 }
 
 /* Labels Centralizadas */
@@ -133,7 +160,7 @@ div[data-baseweb="select"] svg {
     font-size: 0.95rem;
 }
 
-/* Ícones de erro/ajuda (ocultar) */
+/* Ocultar ícones de ajuda do Streamlit */
 div[data-testid="InputInstructions"] { display: none; }
 
 /* Botões com efeito NEON */
