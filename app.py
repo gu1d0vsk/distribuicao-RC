@@ -17,7 +17,7 @@ page_bg_img = """
     background-attachment: fixed;
 }
 
-/* Limpeza da Interface */
+/* Limpeza da Interface Base */
 [data-testid="stHeader"] { background-color: rgba(0,0,0,0); }
 footer {visibility: hidden;}
 #MainMenu {visibility: hidden;}
@@ -25,7 +25,7 @@ header {visibility: hidden;}
 .stDeployButton {display:none;}
 [data-testid="stStatusWidget"] {display:none;}
 
-/* Tipografia */
+/* Tipografia Geral */
 .stMarkdown, .stText, p, h1, h2, h3, h4, h5, h6, label, span, div {
     color: #e0e0e0 !important;
 }
@@ -40,115 +40,76 @@ header {visibility: hidden;}
 .sub-title { color: gray; text-align: center; font-size: 1.25rem !important; margin-bottom: 2rem; }
 
 /* =========================================
-   SOLUÇÃO DEFINITIVA PARA OS INPUTS
+   NOVA ESTILIZAÇÃO DOS INPUTS (CLEAN E ESTÁVEL)
    ========================================= */
 
-/* 1. Remove qualquer fundo de TODOS os wrappers externos do Streamlit */
-[data-testid="stTextInput"] > div,
-[data-testid="stDateInput"] > div,
-[data-testid="stSelectbox"] > div,
-[data-testid="stNumberInput"] > div {
+/* 1. Limpa os fundos e bordas padrão das camadas externas do Streamlit */
+div[data-testid="stTextInput"] > div:first-child,
+div[data-testid="stDateInput"] > div:first-child,
+div[data-testid="stSelectbox"] > div:first-child,
+div[data-testid="stNumberInput"] > div:first-child {
     background-color: transparent !important;
     border: none !important;
     box-shadow: none !important;
 }
 
-/* 2. A "Pílula" (Fundo arredondado) aplicada apenas na camada principal */
-div[data-baseweb="base-input"],
-div[data-baseweb="select"] {
-    background-color: rgba(12, 19, 14, 0.5) !important;
-    border-radius: 50px !important; /* Arredondamento suave */
-    border: none !important;
-    box-shadow: none !important; 
-    height: 3.5rem !important;     
-    min-height: 3.5rem !important; 
-    width: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    box-sizing: border-box !important;
+/* 2. Estiliza a caixa real onde digitamos (base-input e o container do select) */
+.stTextInput div[data-baseweb="base-input"],
+.stDateInput div[data-baseweb="base-input"],
+.stNumberInput div[data-baseweb="base-input"],
+.stSelectbox div[data-baseweb="select"] > div:first-child {
+    background-color: rgba(0, 0, 0, 0.4) !important; /* Fundo escuro levemente transparente */
+    border-radius: 16px !important; /* Bordas arredondadas e modernas (sem quebrar layout) */
+    border: 1px solid rgba(255, 255, 255, 0.05) !important; /* Borda quase invisível para estabilizar */
+    padding: 6px 15px !important; /* Dá o volume natural da caixa sem forçar 'height' */
+    transition: all 0.2s ease-in-out;
 }
 
-/* Adicionando padding interno para Text e Date, mas tirando do Select para alinhar o centro */
-div[data-baseweb="base-input"] {
-    padding: 0 20px !important; 
-}
-div[data-baseweb="select"] {
-    padding: 0 !important; 
-    position: relative !important;
-}
-
-/* 3. Limpa o fundo do Select (camada interna do react-select) */
-div[data-baseweb="select"] > div:first-child {
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    height: 100% !important;
-    width: 100% !important;
-    border-radius: 50px !important;
-}
-
-/* 4. Estiliza os textos digitados e datas */
-div[data-baseweb="base-input"] input { 
-    background-color: transparent !important;
+/* 3. Textos dentro dos inputs de texto, data e número */
+input[type="text"], input[type="number"] {
     color: #ffffff !important;
-    text-align: center !important; 
+    text-align: center !important; /* Centraliza perfeitamente */
+    font-size: 1.15rem !important;
     font-weight: 600 !important;
-    font-size: 1.2rem !important; 
-    width: 100% !important;
-    height: 100% !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-    outline: none !important;
+    -webkit-text-fill-color: #ffffff !important; /* Força cor no Chrome/Safari */
+    background-color: transparent !important;
 }
 
-/* 5. Centralização Absoluta do Texto do Selectbox (Ignora a setinha lateral) */
+/* 4. Textos dentro do Selectbox (Dropdown) */
 div[data-baseweb="select"] [class*="ValueContainer"] {
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    height: 100% !important;
-    width: 100% !important;
+    justify-content: center !important; /* Centraliza via flexbox nativo */
     padding: 0 !important;
 }
-div[data-baseweb="select"] [class*="SingleValue"] {
+div[data-baseweb="select"] [class*="singleValue"] {
     color: #ffffff !important;
+    font-size: 1.15rem !important;
     font-weight: 600 !important;
-    font-size: 1.2rem !important;
-    margin: 0 !important;
-    position: absolute !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important; /* Puxa exatamente para o meio */
+    text-align: center !important;
 }
 
-/* 6. Posição da Setinha do Selectbox */
-div[data-baseweb="select"] [class*="IndicatorsContainer"] {
-    position: absolute !important;
-    right: 15px !important;
-    height: 100% !important;
-    background: transparent !important;
-}
+/* Cor da setinha do Selectbox */
 div[data-baseweb="select"] svg {
-    fill: #dd4f05 !important; 
+    fill: #dd4f05 !important;
 }
 
-/* 7. Elimina o efeito feio do Hover (mouse em cima) */
-div[data-baseweb="base-input"]:hover, 
-div[data-baseweb="select"]:hover,
-div[data-baseweb="select"] > div:hover {
-    background-color: rgba(12, 19, 14, 0.5) !important;
-    box-shadow: none !important;
-    border: none !important;
+/* 5. Interações suaves (Hover e Focus) */
+.stTextInput div[data-baseweb="base-input"]:hover,
+.stDateInput div[data-baseweb="base-input"]:hover,
+.stNumberInput div[data-baseweb="base-input"]:hover,
+.stSelectbox div[data-baseweb="select"] > div:first-child:hover {
+    border-color: rgba(221, 79, 5, 0.4) !important; /* Borda fica laranja sutil ao passar o mouse */
+    background-color: rgba(0, 0, 0, 0.6) !important;
 }
 
-/* 8. Brilho laranja ao clicar (Focus) */
-div[data-baseweb="base-input"]:focus-within, 
-div[data-baseweb="select"]:focus-within {
-    box-shadow: 0 0 0 2px rgba(221, 79, 5, 0.6) !important; 
+.stTextInput div[data-baseweb="base-input"]:focus-within,
+.stDateInput div[data-baseweb="base-input"]:focus-within,
+.stNumberInput div[data-baseweb="base-input"]:focus-within,
+.stSelectbox div[data-baseweb="select"] > div:first-child:focus-within {
+    border-color: #dd4f05 !important; /* Borda laranja forte ao clicar */
+    box-shadow: 0 0 8px rgba(221, 79, 5, 0.3) !important; /* Brilho leve */
 }
 
-/* Labels Centralizadas */
+/* Labels Centralizadas acima dos inputs */
 .main div[data-testid="stDateInput"] > label, 
 .main div[data-testid="stTextInput"] > label,
 .main div[data-testid="stSelectbox"] > label,
@@ -160,8 +121,13 @@ div[data-baseweb="select"]:focus-within {
     font-size: 0.95rem;
 }
 
-/* Ocultar ícones de ajuda do Streamlit */
+/* Ocultar ícones de interrogação/ajuda */
 div[data-testid="InputInstructions"] { display: none; }
+
+
+/* =========================================
+   BOTÕES E CARDS DE RESULTADO
+   ========================================= */
 
 /* Botões com efeito NEON */
 div[data-testid="stButton"] > button { 
@@ -171,7 +137,7 @@ div[data-testid="stButton"] > button {
     border-color: transparent;
     transition: all 0.3s ease; 
     font-weight: bold;
-    height: 3.5rem; 
+    padding: 0.75rem 2rem !important; /* Volume usando padding */
     font-size: 1.1rem !important;
     margin-top: 10px;
 }
@@ -303,7 +269,7 @@ st.markdown('<p class="main-title">Distribuição Orçamentária</p>', unsafe_al
 st.markdown('<p class="sub-title">Calcule os valores anuais pela proporção fixa</p>', unsafe_allow_html=True)
 
 # Input de Valor
-valor_texto = st.text_input("Valor da Compra (R$)", value="10.000,00", help="Use ponto para milhar e vírgula para centavos.")
+valor_texto = st.text_input("Valor da Compra (R$)", value="10.000,00")
 
 col1, col2 = st.columns(2)
 
