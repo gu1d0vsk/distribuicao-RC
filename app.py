@@ -40,7 +40,7 @@ header {visibility: hidden;}
 .sub-title { color: gray; text-align: center; font-size: 1.25rem !important; margin-bottom: 2rem; }
 
 /* =========================================
-   NOVA ESTILIZAÇÃO DOS INPUTS (CLEAN E ESTÁVEL)
+   ESTILIZAÇÃO DOS INPUTS (CORREÇÃO DE CORTE)
    ========================================= */
 
 /* 1. Limpa os fundos e bordas padrão das camadas externas do Streamlit */
@@ -53,38 +53,56 @@ div[data-testid="stNumberInput"] > div:first-child {
     box-shadow: none !important;
 }
 
-/* 2. Estiliza a caixa real onde digitamos (base-input e o container do select) */
+/* 2. Estiliza a caixa real onde digitamos com ALTURA MÍNIMA SEGURA */
 .stTextInput div[data-baseweb="base-input"],
 .stDateInput div[data-baseweb="base-input"],
 .stNumberInput div[data-baseweb="base-input"],
 .stSelectbox div[data-baseweb="select"] > div:first-child {
-    background-color: rgba(0, 0, 0, 0.4) !important; /* Fundo escuro levemente transparente */
-    border-radius: 16px !important; /* Bordas arredondadas e modernas (sem quebrar layout) */
-    border: 1px solid rgba(255, 255, 255, 0.05) !important; /* Borda quase invisível para estabilizar */
-    padding: 6px 15px !important; /* Dá o volume natural da caixa sem forçar 'height' */
+    background-color: rgba(0, 0, 0, 0.4) !important; 
+    border-radius: 16px !important; 
+    border: 1px solid rgba(255, 255, 255, 0.05) !important; 
+    min-height: 48px !important; /* <--- FORÇA ESPAÇO PARA O TEXTO NÃO CORTAR */
+    display: flex !important;
+    align-items: center !important; /* Centraliza verticalmente */
     transition: all 0.2s ease-in-out;
+}
+
+/* Ajuste de padding interno */
+.stTextInput div[data-baseweb="base-input"],
+.stDateInput div[data-baseweb="base-input"],
+.stNumberInput div[data-baseweb="base-input"] {
+    padding: 0 15px !important; 
+}
+.stSelectbox div[data-baseweb="select"] > div:first-child {
+    padding: 0 15px 0 5px !important; 
 }
 
 /* 3. Textos dentro dos inputs de texto, data e número */
 input[type="text"], input[type="number"] {
     color: #ffffff !important;
-    text-align: center !important; /* Centraliza perfeitamente */
+    text-align: center !important; 
     font-size: 1.15rem !important;
     font-weight: 600 !important;
-    -webkit-text-fill-color: #ffffff !important; /* Força cor no Chrome/Safari */
+    -webkit-text-fill-color: #ffffff !important; 
     background-color: transparent !important;
+    height: 100% !important;
 }
 
 /* 4. Textos dentro do Selectbox (Dropdown) */
 div[data-baseweb="select"] [class*="ValueContainer"] {
-    justify-content: center !important; /* Centraliza via flexbox nativo */
+    justify-content: center !important; 
+    align-items: center !important;
     padding: 0 !important;
+    height: 100% !important;
 }
 div[data-baseweb="select"] [class*="singleValue"] {
     color: #ffffff !important;
     font-size: 1.15rem !important;
     font-weight: 600 !important;
     text-align: center !important;
+    line-height: normal !important; /* <--- EVITA QUE A CAIXA ESMAGUE O TEXTO */
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 /* Cor da setinha do Selectbox */
@@ -97,7 +115,7 @@ div[data-baseweb="select"] svg {
 .stDateInput div[data-baseweb="base-input"]:hover,
 .stNumberInput div[data-baseweb="base-input"]:hover,
 .stSelectbox div[data-baseweb="select"] > div:first-child:hover {
-    border-color: rgba(221, 79, 5, 0.4) !important; /* Borda fica laranja sutil ao passar o mouse */
+    border-color: rgba(221, 79, 5, 0.4) !important; 
     background-color: rgba(0, 0, 0, 0.6) !important;
 }
 
@@ -105,8 +123,8 @@ div[data-baseweb="select"] svg {
 .stDateInput div[data-baseweb="base-input"]:focus-within,
 .stNumberInput div[data-baseweb="base-input"]:focus-within,
 .stSelectbox div[data-baseweb="select"] > div:first-child:focus-within {
-    border-color: #dd4f05 !important; /* Borda laranja forte ao clicar */
-    box-shadow: 0 0 8px rgba(221, 79, 5, 0.3) !important; /* Brilho leve */
+    border-color: #dd4f05 !important; 
+    box-shadow: 0 0 8px rgba(221, 79, 5, 0.3) !important; 
 }
 
 /* Labels Centralizadas acima dos inputs */
@@ -137,7 +155,7 @@ div[data-testid="stButton"] > button {
     border-color: transparent;
     transition: all 0.3s ease; 
     font-weight: bold;
-    padding: 0.75rem 2rem !important; /* Volume usando padding */
+    padding: 0.75rem 2rem !important; 
     font-size: 1.1rem !important;
     margin-top: 10px;
 }
