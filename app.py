@@ -39,19 +39,21 @@ header {visibility: hidden;}
 .main-title { font-size: 2.2rem !important; font-weight: bold; text-align: center; }
 .sub-title { color: gray; text-align: center; font-size: 1.25rem !important; margin-bottom: 2rem; }
 
-/* --- CORREÇÃO DOS INPUTS (TEXTO, DATA, SELECT E NUMBER) --- */
+/* --- CORREÇÃO DOS INPUTS --- */
 
-/* 1. Removemos o fundo do container pai */
+/* 1. Removemos o fundo de TODOS os containers e camadas internas para evitar "caixa dupla" */
 div[data-testid="stDateInput"] > div, 
 div[data-testid="stTextInput"] > div,
 div[data-testid="stSelectbox"] > div,
-div[data-testid="stNumberInput"] > div {
+div[data-testid="stNumberInput"] > div,
+div[data-baseweb="base-input"] {
     background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
-/* 2. Estilizamos a "caixa" (wrapper) do input */
+/* 2. Estilizamos APENAS a "caixa" (wrapper) principal do input */
 div[data-baseweb="input"], 
-div[data-baseweb="base-input"],
 div[data-baseweb="select"] {
     background-color: rgba(12, 19, 14, 0.5) !important;
     border-radius: 2rem !important;
@@ -86,13 +88,19 @@ div[data-baseweb="select"] div {
     background-color: transparent !important;
 }
 
-/* Efeito Hover na caixa inteira */
+/* Efeito Hover APENAS na caixa principal */
 div[data-baseweb="input"]:hover, 
-div[data-baseweb="base-input"]:hover,
 div[data-baseweb="select"]:hover {
     background-color: rgba(12, 19, 14, 0.7) !important;
     box-shadow: 0 0 10px rgba(221, 79, 5, 0.2) !important;
 }
+
+/* Faz o input focado não ganhar borda quadrada do Streamlit */
+div[data-baseweb="input"]:focus-within, 
+div[data-baseweb="select"]:focus-within {
+    box-shadow: 0 0 12px rgba(221, 79, 5, 0.5) !important;
+}
+
 
 /* Labels Centralizadas */
 .main div[data-testid="stDateInput"] > label, 
