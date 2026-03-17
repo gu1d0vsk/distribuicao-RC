@@ -40,44 +40,41 @@ header {visibility: hidden;}
 .sub-title { color: gray; text-align: center; font-size: 1.25rem !important; margin-bottom: 2rem; }
 
 /* =========================================
-   ESTILIZAÇÃO DOS INPUTS (CORREÇÃO DE CORTE)
+   ESTILIZAÇÃO DOS INPUTS (SIMPLES E À PROVA DE BUGS)
    ========================================= */
 
-/* 1. Limpa os fundos e bordas padrão das camadas externas do Streamlit */
+/* 1. Limpa os fundos e bordas padrão das camadas externas */
 div[data-testid="stTextInput"] > div:first-child,
 div[data-testid="stDateInput"] > div:first-child,
-div[data-testid="stSelectbox"] > div:first-child,
 div[data-testid="stNumberInput"] > div:first-child {
     background-color: transparent !important;
     border: none !important;
     box-shadow: none !important;
 }
 
-/* 2. Estiliza a caixa real onde digitamos com ALTURA MÍNIMA SEGURA */
-.stTextInput div[data-baseweb="base-input"],
-.stDateInput div[data-baseweb="base-input"],
-.stNumberInput div[data-baseweb="base-input"],
-.stSelectbox div[data-baseweb="select"] > div:first-child {
-    background-color: rgba(0, 0, 0, 0.4) !important; 
-    border-radius: 16px !important; 
-    border: 1px solid rgba(255, 255, 255, 0.05) !important; 
-    min-height: 48px !important; /* <--- FORÇA ESPAÇO PARA O TEXTO NÃO CORTAR */
-    display: flex !important;
-    align-items: center !important; /* Centraliza verticalmente */
-    transition: all 0.2s ease-in-out;
-}
-
-/* Ajuste de padding interno */
+/* 2. Estiliza a caixa real onde digitamos */
 .stTextInput div[data-baseweb="base-input"],
 .stDateInput div[data-baseweb="base-input"],
 .stNumberInput div[data-baseweb="base-input"] {
+    background-color: rgba(0, 0, 0, 0.4) !important; 
+    border-radius: 16px !important; 
+    border: 1px solid rgba(255, 255, 255, 0.05) !important; 
+    min-height: 48px !important; 
+    display: flex !important;
+    align-items: center !important; 
+    transition: all 0.2s ease-in-out;
     padding: 0 15px !important; 
 }
-.stSelectbox div[data-baseweb="select"] > div:first-child {
-    padding: 0 15px 0 5px !important; 
+
+/* 3. Oculta os botões de +/- do input de número para ficar limpo como texto */
+button[aria-label="Step Up"], 
+button[aria-label="Step Down"],
+div[data-testid="stNumberInputStepUp"], 
+div[data-testid="stNumberInputStepDown"] {
+    display: none !important;
 }
 
-/* 3. Textos dentro dos inputs de texto, data e número */
+/* 4. Textos dentro dos inputs */
 input[type="text"], input[type="number"] {
     color: #ffffff !important;
     text-align: center !important; 
@@ -86,43 +83,20 @@ input[type="text"], input[type="number"] {
     -webkit-text-fill-color: #ffffff !important; 
     background-color: transparent !important;
     height: 100% !important;
-}
-
-/* 4. Textos dentro do Selectbox (Dropdown) */
-div[data-baseweb="select"] [class*="ValueContainer"] {
-    justify-content: center !important; 
-    align-items: center !important;
-    padding: 0 !important;
-    height: 100% !important;
-}
-div[data-baseweb="select"] [class*="singleValue"] {
-    color: #ffffff !important;
-    font-size: 1.15rem !important;
-    font-weight: 600 !important;
-    text-align: center !important;
-    line-height: normal !important; /* <--- EVITA QUE A CAIXA ESMAGUE O TEXTO */
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-/* Cor da setinha do Selectbox */
-div[data-baseweb="select"] svg {
-    fill: #dd4f05 !important;
+    width: 100% !important;
 }
 
 /* 5. Interações suaves (Hover e Focus) */
 .stTextInput div[data-baseweb="base-input"]:hover,
 .stDateInput div[data-baseweb="base-input"]:hover,
-.stNumberInput div[data-baseweb="base-input"]:hover,
-.stSelectbox div[data-baseweb="select"] > div:first-child:hover {
+.stNumberInput div[data-baseweb="base-input"]:hover {
     border-color: rgba(221, 79, 5, 0.4) !important; 
     background-color: rgba(0, 0, 0, 0.6) !important;
 }
 
 .stTextInput div[data-baseweb="base-input"]:focus-within,
 .stDateInput div[data-baseweb="base-input"]:focus-within,
-.stNumberInput div[data-baseweb="base-input"]:focus-within,
-.stSelectbox div[data-baseweb="select"] > div:first-child:focus-within {
+.stNumberInput div[data-baseweb="base-input"]:focus-within {
     border-color: #dd4f05 !important; 
     box-shadow: 0 0 8px rgba(221, 79, 5, 0.3) !important; 
 }
@@ -130,7 +104,6 @@ div[data-baseweb="select"] svg {
 /* Labels Centralizadas acima dos inputs */
 .main div[data-testid="stDateInput"] > label, 
 .main div[data-testid="stTextInput"] > label,
-.main div[data-testid="stSelectbox"] > label,
 .main div[data-testid="stNumberInput"] > label { 
     text-align: center !important; 
     width: 100%; 
@@ -295,13 +268,8 @@ with col1:
     dt_inicio = st.date_input("Início da Vigência", value=date.today(), format="DD/MM/YYYY")
 
 with col2:
-    opcoes_meses = ["12", "24", "30", "36", "60", "Personalizado"]
-    escolha = st.selectbox("Duração (Meses)", opcoes_meses, index=0)
-    
-    if escolha == "Personalizado":
-        meses_duracao = st.number_input("Digite a quantidade de meses", min_value=1, value=12, step=1)
-    else:
-        meses_duracao = int(escolha)
+    # Substituído o Selectbox problemático por um Input Numérico super limpo
+    meses_duracao = st.number_input("Duração (Meses)", min_value=1, value=12, step=1)
 
 # Calcula a data de fim automaticamente baseado no número de meses (-1 dia de carência comum em contratos)
 dt_fim_calculada = adicionar_meses(dt_inicio, meses_duracao) - datetime.timedelta(days=1)
