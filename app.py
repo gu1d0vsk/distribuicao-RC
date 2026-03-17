@@ -3,6 +3,7 @@ import datetime
 from datetime import date
 import streamlit.components.v1 as components
 import re
+import calendar
 
 # --- Configuração da Página ---
 st.set_page_config(page_title="Calculadora de Orçamento", page_icon="💰", layout="centered")
@@ -38,49 +39,66 @@ header {visibility: hidden;}
 .main-title { font-size: 2.2rem !important; font-weight: bold; text-align: center; }
 .sub-title { color: gray; text-align: center; font-size: 1.25rem !important; margin-bottom: 2rem; }
 
-/* --- CORREÇÃO DOS INPUTS (TEXTO E DATA) --- */
+/* --- CORREÇÃO DOS INPUTS (TEXTO, DATA, SELECT E NUMBER) --- */
 
-/* 1. Removemos o fundo do container pai para evitar "cantos quadrados" */
+/* 1. Removemos o fundo do container pai */
 div[data-testid="stDateInput"] > div, 
-div[data-testid="stTextInput"] > div {
+div[data-testid="stTextInput"] > div,
+div[data-testid="stSelectbox"] > div,
+div[data-testid="stNumberInput"] > div {
     background-color: transparent !important;
 }
 
-/* 2. Estilizamos a "caixa" (wrapper) do input - AQUI ESTÁ A CORREÇÃO DA ALTURA */
-div[data-baseweb="input"], div[data-baseweb="base-input"] {
-    background-color: rgba(12, 19, 14, 0.5) !important; /* Opacidade ajustada para 0.5 */
+/* 2. Estilizamos a "caixa" (wrapper) do input */
+div[data-baseweb="input"], 
+div[data-baseweb="base-input"],
+div[data-baseweb="select"] {
+    background-color: rgba(12, 19, 14, 0.5) !important;
     border-radius: 2rem !important;
     border: none !important;
     box-shadow: none !important;
     padding: 0px 15px !important; 
-    height: 3.5rem !important;     /* Altura forçada para não ficar fino */
-    min-height: 3.5rem !important; /* Garantia de altura */
-    align-items: center !important; /* Centraliza o texto verticalmente */
+    height: 3.5rem !important;     
+    min-height: 3.5rem !important; 
+    align-items: center !important; 
 }
 
 /* 3. Estilizamos o texto dentro do input */
 div[data-testid="stDateInput"] input, 
-div[data-testid="stTextInput"] input { 
+div[data-testid="stTextInput"] input,
+div[data-testid="stNumberInput"] input { 
     background-color: transparent !important;
     color: #ffffff !important;
     text-align: center; 
     font-weight: 600;
     font-size: 1.2rem; 
-    height: 100% !important; /* Ocupa toda a altura da caixa */
+    height: 100% !important;
     min-height: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
 }
 
+/* Estilizando o texto do SelectBox */
+div[data-baseweb="select"] div {
+    color: #ffffff !important;
+    font-weight: 600;
+    font-size: 1.1rem;
+    background-color: transparent !important;
+}
+
 /* Efeito Hover na caixa inteira */
-div[data-baseweb="input"]:hover, div[data-baseweb="base-input"]:hover {
-    background-color: rgba(12, 19, 14, 0.7) !important; /* Escurece um pouco no hover */
+div[data-baseweb="input"]:hover, 
+div[data-baseweb="base-input"]:hover,
+div[data-baseweb="select"]:hover {
+    background-color: rgba(12, 19, 14, 0.7) !important;
     box-shadow: 0 0 10px rgba(221, 79, 5, 0.2) !important;
 }
 
 /* Labels Centralizadas */
 .main div[data-testid="stDateInput"] > label, 
-.main div[data-testid="stTextInput"] > label { 
+.main div[data-testid="stTextInput"] > label,
+.main div[data-testid="stSelectbox"] > label,
+.main div[data-testid="stNumberInput"] > label { 
     text-align: center !important; 
     width: 100%; 
     display: block;
@@ -99,7 +117,7 @@ div[data-testid="stButton"] > button {
     border-color: transparent;
     transition: all 0.3s ease; 
     font-weight: bold;
-    height: 3.5rem; /* Mesma altura dos inputs */
+    height: 3.5rem; 
     font-size: 1.1rem !important;
     margin-top: 10px;
 }
@@ -167,6 +185,14 @@ def parse_valor_brasileiro(valor_str):
     except:
         return None
 
+def adicionar_meses(data_origem, meses):
+    """Adiciona um número de meses a uma data considerando virada de ano e dias limite."""
+    mes_novo = data_origem.month - 1 + meses
+    ano_novo = data_origem.year + mes_novo // 12
+    mes_novo = mes_novo % 12 + 1
+    dia_novo = min(data_origem.day, calendar.monthrange(ano_novo, mes_novo)[1])
+    return date(ano_novo, mes_novo, dia_novo)
+
 def calcular_distribuicao_financeira(inicio, fim, valor_total):
     if inicio > fim:
         return None, None, "A data de início deve ser anterior ou igual à data de fim."
@@ -231,7 +257,19 @@ with col1:
     dt_inicio = st.date_input("Início da Vigência", value=date.today(), format="DD/MM/YYYY")
 
 with col2:
-    dt_fim = st.date_input("Fim da Vigência", value=date.today() + datetime.timedelta(days=365), format="DD/MM/YYYY")
+    opcoes_meses = ["12", "24", "30", "36", "60", "Personalizado"]
+    escolha = st.selectbox("Duração (Meses)", opcoes_meses, index=0)
+    
+    if escolha == "Personalizado":
+        meses_duracao = st.number_input("Digite a quantidade de meses", min_value=1, value=12, step=1)
+    else:
+        meses_duracao = int(escolha)
+
+# Calcula a data de fim automaticamente baseado no número de meses (-1 dia de carência comum em contratos)
+dt_fim_calculada = adicionar_meses(dt_inicio, meses_duracao) - datetime.timedelta(days=1)
+
+# Mostra uma dica visual sutil de até quando o contrato vai
+st.markdown(f"<p style='text-align: center; font-size: 0.85rem; color: #7f8c8d; margin-top: -10px;'>O cálculo será feito até: {dt_fim_calculada.strftime('%d/%m/%Y')}</p>", unsafe_allow_html=True)
 
 col_vazia_esq, col_btn, col_vazia_dir = st.columns([1, 2, 1])
 
@@ -257,7 +295,8 @@ if calcular:
     if not valor_valido:
         st.markdown(f'<div class="custom-warning">{msg_erro}</div>', unsafe_allow_html=True)
     else:
-        valores, proporcoes, erro_calc = calcular_distribuicao_financeira(dt_inicio, dt_fim, valor_float)
+        # Usa a data de fim que foi calculada automaticamente em vez da digitada pelo usuário
+        valores, proporcoes, erro_calc = calcular_distribuicao_financeira(dt_inicio, dt_fim_calculada, valor_float)
         
         if erro_calc:
             st.markdown(f'<div class="custom-warning">{erro_calc}</div>', unsafe_allow_html=True)
